@@ -3,6 +3,7 @@
 import tensorflow as tf
 import numpy as np
 import os
+import sys
 import time
 import datetime
 import data_helpers
@@ -28,7 +29,8 @@ tf.flags.DEFINE_boolean("log_device_placement", False, "Log placement of ops on 
 
 
 FLAGS = tf.flags.FLAGS
-FLAGS._parse_flags()
+FLAGS(sys.argv)
+# FLAGS._parse_flags()
 print("\nParameters:")
 for attr, value in sorted(FLAGS.__flags.items()):
     print("{}={}".format(attr.upper(), value))
@@ -48,6 +50,9 @@ vocab_processor = learn.preprocessing.VocabularyProcessor.restore(vocab_path)
 x_test = np.array(list(vocab_processor.transform(x_raw)))
 
 print("\nEvaluating...\n")
+
+#ADDED
+prediction_strings = ["NEGATIVE", "POSITIVE"]
 
 # Evaluation
 # ==================================================
@@ -70,7 +75,7 @@ with graph.as_default():
 
         # Tensors we want to evaluate
         predictions = graph.get_operation_by_name("output/predictions").outputs[0]
-
+        
         # Generate batches for one epoch
         batches = data_helpers.batch_iter(list(x_test), FLAGS.batch_size, 1, shuffle=False)
 
@@ -81,14 +86,29 @@ with graph.as_default():
             batch_predictions = sess.run(predictions, {input_x: x_test_batch, dropout_keep_prob: 1.0})
             all_predictions = np.concatenate([all_predictions, batch_predictions])
 
+        #Convert predictions to strings
+        string_predictions = [prediction_strings[int(i)] for i in all_predictions]
+        # print('PREDICTIONS', string_predictions)
 # Print accuracy if y_test is defined
 if y_test is not None:
     correct_predictions = float(sum(all_predictions == y_test))
     print("Total number of test examples: {}".format(len(y_test)))
     print("Accuracy: {:g}".format(correct_predictions/float(len(y_test))))
 
+print('all_predictions', all_predictions)
+distinct = set(all_predictions)
+for p in distinct:
+    tp, tn, fp, fn = 0
+    for i in len(all_predictions):
+        if all_predictions[i] == y_test[i] and int(p) == y_test[i]: 
+            tp = tp + 1
+        
+    print(prediction_strings[p])
+    print("TP: {}, TN: {}, FP: {}, FN: {}".format(tp, tn, fp, fn))
+print(distinct)
+
 # Save the evaluation to a csv
-predictions_human_readable = np.column_stack((np.array(x_raw), all_predictions))
+predictions_human_readable = np.column_stack((np.array(x_raw), string_predictions))
 out_path = os.path.join(FLAGS.checkpoint_dir, "..", "prediction.csv")
 print("Saving evaluation to {0}".format(out_path))
 with open(out_path, 'w') as f:
