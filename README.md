@@ -4,7 +4,7 @@ It is slightly simplified implementation of Kim's [Convolutional Neural Networks
 
 ## Requirements
 
-- Python 3
+- Python 3.6 (Run in 3.6 conda environment)
 - Tensorflow > 0.12
 - Numpy
 
