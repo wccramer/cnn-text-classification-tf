@@ -88,7 +88,7 @@ with graph.as_default():
 
         #Convert predictions to strings
         string_predictions = [prediction_strings[int(i)] for i in all_predictions]
-        # print('PREDICTIONS', string_predictions)
+        
 # Print accuracy if y_test is defined
 if y_test is not None:
     correct_predictions = float(sum(all_predictions == y_test))
